@@ -1,21 +1,23 @@
 #include "cv_bridge/cv_bridge.h"
+#include "opencv2/calib3d/calib3d.hpp" 
 #include "ros/ros.h"
 #include "sensor_msgs/Image.h"
+#include "visualization_msgs/Marker.h"
+#include "geometry_msgs/Point.h"
 #include <algorithm>
+#include <stdio.h>
 const int low_threshold = 100;
 const int high_threshold = 200;
 const int kernel_size = 3;
-const char* window_name = "Road Detector";
 const double METERS_PER_INCH = 0.0254;
-const uint32_t shape = visualization_msgs::Marker::CUBE;
-const int PTS_IMAGE_PLANE[4][2] = [[253, 203],
-                   [471, 201],
-                   [281, 178],
-                   [441, 245]];
-const double PTS_GROUND_PLANE[4][2] = [[-12.75** METERS_PER_INCH, 39.3701** METERS_PER_INCH],
-                    [12.75** METERS_PER_INCH, 39.3701** METERS_PER_INCH],
-                    [-12.75** METERS_PER_INCH, 50.3701** METERS_PER_INCH],
-                    [4.25** METERS_PER_INCH, 23.0** METERS_PER_INCH]];
+std::vector<cv::Point2f> PTS_IMAGE_PLANE = {cv::Point2f(253, 203),
+                   cv::Point2f(471, 201),
+                   cv::Point2f(281, 178),
+                   cv::Point2f(441, 245)};
+std::vector<cv::Point2f> PTS_GROUND_PLANE = {cv::Point2f(-12.75* METERS_PER_INCH, 39.3701* METERS_PER_INCH),
+                    cv::Point2f(12.75* METERS_PER_INCH, 39.3701* METERS_PER_INCH),
+                    cv::Point2f(-12.75* METERS_PER_INCH, 50.3701* METERS_PER_INCH),
+                    cv::Point2f(4.25* METERS_PER_INCH, 23.0* METERS_PER_INCH)};
 
 class RoadDetector{
     protected:
@@ -35,14 +37,15 @@ class RoadDetector{
     int kernel_size_;
     cv::Vec4i left_line_;
     cv::Vec4i right_line_;
-
+    cv::Vec4i mid_line_;
+    visualization_msgs::Marker line_list_;
     public: 
         RoadDetector(ros::NodeHandle n): nh_(n), low_threshold_(200), high_threshold_(400), kernel_size_(3){
             img_sub_ = nh_.subscribe("/zed/zed_node/rgb/image_rect_color", 1, &RoadDetector::imgCallback, this);
             img_pub_ = nh_.advertise<sensor_msgs::Image>("/road_detector/debug_img", 1);
             box_pub_ = nh_.advertise<sensor_msgs::Image>("/road_detector/box", 1);
-            marker_pub_ = nh_.advertise<visualization_msgs::Marker>("/road_detector/points", 1);
-            homograph_matrix = cv::findHomography(cv::Mat(4, 2, CV_32FC1, PTS_IMAGE_PLANE), cv::Mat(4, 2, CV_32FC1, PTS_GROUND_PLANE));
+            marker_pub_ = nh_.advertise<visualization_msgs::Marker>("/road_detector/visualizations", 1);
+            homography_matrix_ = cv::findHomography(PTS_IMAGE_PLANE, PTS_GROUND_PLANE);
         }
 
         void imgCallback(const sensor_msgs::ImageConstPtr& msg){
@@ -97,55 +100,66 @@ class RoadDetector{
             int min_y, max_y;
             min_y = std::min(std::min(left_line_[1], left_line_[3]),std::min(right_line_[1], right_line_[3]));
             max_y = std::max(std::max(left_line_[1], left_line_[3]), std::max(right_line_[1], right_line_[3]));
-            cv::Vec4i mid_line_ = cv::Vec4i((left_line_[0] + (right_line_[2] + right_roi.x))/2, min_y, ((right_line_[2] + right_roi.x) + left_line_[0])/2, max_y);
+            mid_line_ = cv::Vec4i((left_line_[0] + (right_line_[2] + right_roi.x))/2, min_y, ((right_line_[2] + right_roi.x) + left_line_[0])/2, max_y);
             cv::line(debug_img_, cv::Point(left_line_[0], left_line_[1] + left_roi.y), cv::Point(left_line_[2], left_line_[3] + left_roi.y), cv::Scalar(0,255,0), 3, cv::LINE_AA);
             cv::line(debug_img_, cv::Point(right_line_[0] + right_roi.x , right_line_[1] + right_roi.y), cv::Point(right_line_[2] + right_roi.x, right_line_[3] + right_roi.y), cv::Scalar(0,255,0), 3, cv::LINE_AA);
             cv::line(debug_img_, cv::Point(mid_line_[0], mid_line_[1] + left_roi.y), cv::Point(mid_line_[2], mid_line_[3] + left_roi.y), cv::Scalar(255,0,0), 3, cv::LINE_AA);
-
             img_pub_.publish(cv_bridge::CvImage(std_msgs::Header(), "bgr8", debug_img_).toImageMsg());
+            RoadDetector::visualizeLines();
         }
     double getDist(cv::Vec4i line){ 
         double m = (line[3] - line[1])/(line[2] - line[0]);
         double b = line[1] - line[0]*m;
         return abs(m*detected_edges_.cols + b - detected_edges_.rows/2)/sqrt(m*m + 1);
     }
-    void transformUvToXy(int u, int v, double& x, double& y){
-        cv::Vec3i homogeneous_point = cv::Vec3i(u, v, 1);
-        cv::Vec3d xy_point =  homography_matrix.dot(homogeneous_point);
-        double scaling_factor = 1/xy_point[2];
-        homoogeneous_xy = xy_point * scaling_factor;
-        *x = homoogeneous_xy[0];
-        *y = homoogeneous_xy[1];
+    void transformUvToXy(int u, int v, double* x, double* y){
+        cv::Vec3d homogeneous_point = cv::Vec3d(u, v, 1.0);
+        cout << homography_matrix_.type() << endl;
+        cv::Mat xy_point =  homography_matrix_ * cv::Mat(homogeneous_point);
+        double scaling_factor = 1/xy_point.at<double>(2,0);
+        cv::Mat homoogeneous_xy = xy_point * scaling_factor;
+        *x = homoogeneous_xy.at<double>(0,0);
+        *y = homoogeneous_xy.at<double>(1,0);
     }
 
-    void visualizePoint(int u, int v){
-        double x,y;
-        RoadDetector::transformUvToXy(u,v,&x, &y);
-        visualization_msgs::Marker marker;
-        marker.header.frame_id = "/zed_camera_center";
-        marker.header.stamp = ros::Time::now();
-        marker.ns = "road_detector";
-        marker.id = 0;
-        marker.type = marker_shape;
-        marker.action = visualization_msgs::Marker::ADD;
-        marker.pose.position.x = x; 
-        marker.pose.position.y = y;
-        marker.pose.position.z = 0;
-        marker.pose.orientation.x = 0.0;
-        marker.pose.orientation.y = 0.0;
-        marker.pose.orientation.z = 0.0;
-        marker.pose.orientation.w = 1.0;
-        marker.scale.x = 1.0;
-        marker.scale.y = 1.0;
-        marker.scale.z = 1.0;
+    void visualizeLines(){
+        line_list_.header.frame_id = "/zed_camera_center";
+        line_list_.header.stamp = ros::Time::now();
+        line_list_.ns = "detected_lines";
+        line_list_.id = 0;
+        line_list_.type = visualization_msgs::Marker::LINE_LIST;
+        line_list_.action = visualization_msgs::Marker::ADD;
+        line_list_.pose.orientation.w = 1.0;
+        line_list_.scale.x = .1;
 
-        marker.color.a = 1.0; // Don't forget to set the alpha!
-        marker.color.r = 0.0;
-        marker.color.g = 1.0;
-        marker.color.b = 0.0;
+        line_list_.color.a = 1.0; // Don't forget to set the alpha!
+        line_list_.color.r = 0.0;
+        line_list_.color.g = 1.0;
+        line_list_.color.b = 0.0;
 
-        marker.lifetime = ros::Duration();
-        marker_pub_.publish(marker);
+        double x,y,z;
+        z = 0.0;
+        RoadDetector::transformUvToXy(left_line_[0], left_line_[1], &x, &y);
+        line_list_.points.push_back(RoadDetector::makePoint(x,y,z));
+        RoadDetector::transformUvToXy(left_line_[2], left_line_[3], &x, &y);
+        line_list_.points.push_back(RoadDetector::makePoint(x,y,z));
+        RoadDetector::transformUvToXy(right_line_[0], right_line_[1], &x, &y);
+        line_list_.points.push_back(RoadDetector::makePoint(x,y,z));
+        RoadDetector::transformUvToXy(right_line_[2], right_line_[3], &x, &y);
+        line_list_.points.push_back(RoadDetector::makePoint(x,y,z));
+        RoadDetector::transformUvToXy(mid_line_[0], mid_line_[1], &x, &y);
+        line_list_.points.push_back(RoadDetector::makePoint(x,y,z));
+        RoadDetector::transformUvToXy(mid_line_[2], mid_line_[3], &x, &y);
+        line_list_.points.push_back(RoadDetector::makePoint(x,y,z));
+
+        marker_pub_.publish(line_list_);
+    }
+    geometry_msgs::Point makePoint(int x, int y , int z){
+        geometry_msgs::Point p;
+        p.x = x;
+        p.y = y;
+        p.z = z;
+        return p;
     }
 };
 
