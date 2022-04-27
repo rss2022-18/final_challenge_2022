@@ -29,11 +29,13 @@ class ParkingController():
             AckermannDriveStamped, queue_size=10)
         self.error_pub = rospy.Publisher("/parking_error",
             ParkingError, queue_size=10)
-
+        # 1 m/s is the absolute max speed for the city. for full credit, staff expect ~0.5 m/s to be sufficient
         self.desired_velocity = 1  #[m/s]
         self.L = 0.35 #[m]
-        self.lookahead = 0.4 # [m], variable
-        self.parking_distance = .45 # meters; try playing with this number!
+        # In order to line follow, lookahead > parking_distance must be true
+        # these two variables can be adjusted if needed. requires testing.
+        self.lookahead = 0.90 # [m], variable
+        self.parking_distance = .75 # meters; try playing with this number!
         self.relative_x = 0
         self.relative_y = 0
         self.slow_down = False
