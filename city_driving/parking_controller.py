@@ -123,7 +123,7 @@ class ParkingController():
             self.error_publisher()
 
     def error_publisher(self):
-        """
+        """ 
         Publish the error between the car and the cone. We will view this
         with rqt_plot to plot the success of the controller
         """
@@ -138,7 +138,6 @@ class ParkingController():
         error_msg.x_error = float(self.relative_x)
         error_msg.y_error = float(self.relative_y)
         error_msg.theta_error = atan2(self.relative_y, self.relative_x)
-        #print(sqrt((self.relative_x)**2 + (self.relative_y)**2).real)
         error_msg.distance_error = float((sqrt((self.relative_x)**2 + (self.relative_y)**2)).real)
         
         self.error_pub.publish(error_msg)
