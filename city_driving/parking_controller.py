@@ -54,7 +54,7 @@ class ParkingController():
 
         #TODO: change distance from stop sign and timer value (2,5)
         # The stop distance is about 0.75 - 1 meters
-        if self.distance_from_stop_sign < 2 and not self.slow_down and self.timer_following > 5:
+        if self.distance_from_stop_sign < 3 and not self.slow_down and self.timer_following > 10:
             self.slow_down = True
 
     def relative_cone_callback(self, msg):
@@ -64,7 +64,7 @@ class ParkingController():
             drive_cmd.drive.speed          = 0
             self.drive_pub.publish(drive_cmd)
 
-            if self.timer_stopping > 5: 
+            if self.timer_stopping > 10: 
                 self.stopped = False
                 self.slow_down = False
                 self.timer_following = 0 
@@ -127,7 +127,7 @@ class ParkingController():
             self.error_publisher()
 
     def error_publisher(self):
-        """
+        """ 
         Publish the error between the car and the cone. We will view this
         with rqt_plot to plot the success of the controller
         """
@@ -142,7 +142,6 @@ class ParkingController():
         error_msg.x_error = float(self.relative_x)
         error_msg.y_error = float(self.relative_y)
         error_msg.theta_error = atan2(self.relative_y, self.relative_x)
-        #print(sqrt((self.relative_x)**2 + (self.relative_y)**2).real)
         error_msg.distance_error = float((sqrt((self.relative_x)**2 + (self.relative_y)**2)).real)
         
         self.error_pub.publish(error_msg)
