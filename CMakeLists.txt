@@ -77,7 +77,7 @@ generate_messages(
   DEPENDENCIES
   geometry_msgs#   
   std_msgs#   
-  visual_msgs
+  # visual_msgs
 )
 
 ################################################
@@ -112,7 +112,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES final_challenge_2022
-CATKIN_DEPENDS geometry_msgs openncv2 roscpp rospy std_msgs visual_msgs
+CATKIN_DEPENDS geometry_msgs openncv2 roscpp rospy std_msgs # visual_msgs
 #  DEPENDS system_lib
 )
 
