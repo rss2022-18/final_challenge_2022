@@ -211,8 +211,8 @@ include_directories(
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
-find_package(OpenCV)
-include_directories(${OpenCV_INCLUDE_DIRS})
-add_executable(road_detector road_detector/src/road_detector.cpp)
-target_link_libraries(road_detector ${OpenCV_LIBRARIES})
-target_link_libraries(road_detector ${catkin_LIBRARIES})
+#find_package(OpenCV)
+#include_directories(${OpenCV_INCLUDE_DIRS})
+#add_executable(road_detector road_detector/src/road_detector.cpp)
+#target_link_libraries(road_detector ${OpenCV_LIBRARIES})
+#target_link_libraries(road_detector ${catkin_LIBRARIES})
