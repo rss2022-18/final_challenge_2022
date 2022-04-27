@@ -5,12 +5,13 @@ import numpy as np
 from cmath import cos, sin, sqrt
 from math import atan2
 from turtle import distance
+import datetime
 
 from visual_servoing.msg import ConeLocation, ParkingError
 from ackermann_msgs.msg import AckermannDriveStamped
 from final_challenge_2022.msg import StopSignLocation
 
-
+# NOTE: the car just has to reach zero momentum at a stop sign, there is no particular amount of time it must be stopped
 class ParkingController():
     """
     A controller for parking in front of a cone.
@@ -52,6 +53,7 @@ class ParkingController():
 
 
         #TODO: change distance from stop sign and timer value (2,5)
+        # The stop distance is about 0.75 - 1 meters
         if self.distance_from_stop_sign < 2 and not self.slow_down and self.timer_following > 5:
             self.slow_down = True
 
