@@ -3,18 +3,18 @@
   <!-- Launch the city driving on real robot. Launches safety controller, controller node, cone detection node, and the homography transformer, line following -->
   
   <!-- Safety controller -->
-  <node pkg="safety_controller" name="safety_controller" type="safety_controller.py" output="screen">
-  </node>
-
+  <!--<node pkg="safety_controller" name="safety_controller" type="safety_controller.py" output="screen">
+  </node> -->
+   <include file="$(find zed_wrapper)/launch/zed.launch" />
   <!-- Parking-->
-  <node pkg="final_challenge_2022" name="stop_sign_controller" type="stop_sign_controller.py" output="screen">
-  	<param name="drive_topic" value="/vesc/ackermann_cmd_mux/input/nav_0" />
+  <node pkg="final_challenge_2022" name="parking_controller" type="parking_controller.py" output="screen">
+  	<param name="drive_topic" value="/vesc/ackermann_cmd_mux/input/navigation" />
   </node>
 
   <!-- Line following-->
-  <node pkg="visual_servoing" name="parking_controller" type="parking_controller.py" output="screen">
+  <!--<node pkg="visual_servoing" name="parking_controller" type="parking_controller.py" output="screen">
   	<param name="drive_topic" value="/vesc/ackermann_cmd_mux/input/nav_1" />
-  </node>
+  </node> -->
 
   <node pkg="visual_servoing" name="cone_detector" type="cone_detector.py" output="screen">
   </node>
