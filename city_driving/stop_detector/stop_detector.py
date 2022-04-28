@@ -9,7 +9,7 @@ from detector import StopSignDetector
 class SignDetector:
     def __init__(self):
         self.detector = StopSignDetector()
-        self.publisher = rospy.Publisher("/stop_detection", Float32MultiArray, queue_size=10)
+        self.publisher = rospy.Publisher("/stop_sign_location_px", StopSignLocationPixel, queue_size=10)
         self.subscriber = rospy.Subscriber("/zed/zed_node/rgb/image_rect_color", Image, self.callback)
 
     def callback(self, img_msg):
