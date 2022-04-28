@@ -40,7 +40,7 @@ class StopSignLocationTransform():
     Can be used in the simulator and on the real robot.
     """
     def __init__(self):
-        self.stop_sign_px_sub = rospy.Subscriber("/stop_sign_location_px", StopSignLocationPixel, self.stop_sign_detection_callback)
+        self.stop_sign_px_sub = rospy.Subscriber("/stop_sign_bbox", Float32MultiArray, self.stop_sign_detection_callback)
         self.stop_sign_pub = rospy.Publisher("/stop_sign_location", StopSignLocation)
 
         if not len(PTS_GROUND_PLANE) == len(PTS_IMAGE_PLANE):
@@ -61,17 +61,19 @@ class StopSignLocationTransform():
 
     def stop_sign_detection_callback(self, msg):
         # Extract information from message
-        u = msg.u
-        v = msg.v
+        if msg is not None:
+            contents = msg.data
+            u = (contents[0] + contents[2])/2
+            v = (contents[1] + contents[3])/2
 
-        # Call to main function
-        x, y = self.transformUvToXy(u, v)
+            # Call to main function
+            x, y = self.transformUvToXy(u, v)
 
-        # Publish relative xy position of object in real world
-        relative_xy_msg = StopSignLocationPixel()
-        relative_xy_msg.x_pos = y
-        relative_xy_msg.y_pos = -1*x
-        self.stop_sign_pub.publish(relative_xy_msg)
+            # Publish relative xy position of object in real world
+            relative_xy_msg = StopSignLocationPixel()
+            relative_xy_msg.x_pos = y
+            relative_xy_msg.y_pos = -1*x
+            self.stop_sign_pub.publish(relative_xy_msg)
 
     def transformUvToXy(self, u, v):
         """

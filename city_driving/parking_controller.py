@@ -47,15 +47,17 @@ class ParkingController():
         self.timer_stopping = 0
 
     def stop_sign_callback(self, msg):
-        self.relative_x = msg.x_pos
-        self.relative_y = msg.y_pos
-        self.distance_from_stop_sign = sqrt(self.relative_x**2 + self.relative_y**2).real
+        if msg is not None:
+            self.relative_x = msg.x_pos
+            self.relative_y = msg.y_pos
+            self.distance_from_stop_sign = sqrt(self.relative_x**2 + self.relative_y**2).real
 
 
         #TODO: change distance from stop sign and timer value (2,5)
         # The stop distance is about 0.75 - 1 meters
         if self.distance_from_stop_sign < 1 and not self.slow_down and self.timer_following > 10000:
             self.slow_down = True
+
 
     def relative_cone_callback(self, msg):
         if self.stopped: 
