@@ -66,18 +66,19 @@ class StopSignLocationTransform():
         # Extract information from message
         if msg is not None:
             contents = msg.data
-            # TODO: check if these pixel values respect the expected frame orientation
-            u = (contents[0] + contents[2])/2
-            v = (contents[1] + contents[3])/2
+            if contents:
+                # TODO: check if these pixel values respect the expected frame orientation
+                u = (contents[0] + contents[2])/2
+                v = (contents[1] + contents[3])/2
 
-            # Call to main function
-            x, y = self.transformUvToXy(u, v)
+                # Call to main function
+                x, y = self.transformUvToXy(u, v)
 
-            # Publish relative xy position of object in real world
-            relative_xy_msg = StopSignLocation()
-            relative_xy_msg.x_pos = y
-            relative_xy_msg.y_pos = -1*x
-            self.stop_sign_pub.publish(relative_xy_msg)
+                # Publish relative xy position of object in real world
+                relative_xy_msg = StopSignLocation()
+                relative_xy_msg.x_pos = y
+                relative_xy_msg.y_pos = -1*x
+                self.stop_sign_pub.publish(relative_xy_msg)
 
     def transformUvToXy(self, u, v):
         """
