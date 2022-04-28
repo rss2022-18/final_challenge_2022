@@ -42,9 +42,10 @@ class ParkingController():
         self.slow_down = False
         self.distance_from_stop_sign = None
         self.stopped = False
-
-        self.timer_following = 0
-        self.timer_stopping = 0
+        self.dist_req = 1  # [m], we should stop about 0.75-1meter away from the sign
+        self.timer_following = None
+        self.timer_stopping = None
+        self.stop_buffer = 3  # [s], amount of time to ignore a stop sign
 
     def stop_sign_callback(self, msg):
         if msg is not None:
@@ -53,25 +54,31 @@ class ParkingController():
             self.distance_from_stop_sign = sqrt(self.relative_x**2 + self.relative_y**2).real
 
 
-        #TODO: change distance from stop sign and timer value (2,5)
         # The stop distance is about 0.75 - 1 meters
-        if self.distance_from_stop_sign < 1 and not self.slow_down and self.timer_following > 10000:
+        elapsed_time = (self.timer_following - rospy.Time.now()).to_sec()
+        # adding 0.25 meters gives us about 0.25 meters to slow down, this value can be changed / tuned
+        if self.distance_from_stop_sign <= self.dist_req+0.25 and not self.slow_down and elapsed_time > self.stop_buffer:
             self.slow_down = True
 
 
     def relative_cone_callback(self, msg):
-        if self.stopped: 
-            self.timer_stopping += 1
+        if self.stopped:
+            if self.timer_stopping is None:
+                self.timer_stopping = rospy.Time.now()
             drive_cmd = AckermannDriveStamped()
             drive_cmd.drive.speed          = 0
+            # TODO: do we also need to publish an angle?
             self.drive_pub.publish(drive_cmd)
-
-            if self.timer_stopping > 10000:
+            # we need to be stopped for at least two seconds, this time can be changed
+            # another potential metric is, if we're too close to the sign, ignore it and continue?
+            if (self.timer_stopping - rospy.Time.now()).to_sec() > 2:
                 self.stopped = False
                 self.slow_down = False
-                self.timer_following = 0 
+                self.timer_following = rospy.Time.now()
+                self.timer_stopping = None
         else:
-            self.timer_following += 1
+            if self.timer_following is None:
+                self.timer_following = rospy.Time.now()
             self.relative_x = msg.x_pos
             self.relative_y = msg.y_pos
             drive_cmd = AckermannDriveStamped()
@@ -87,10 +94,11 @@ class ParkingController():
             # velocity scaling, according to angle. 
             vel = abs(self.desired_velocity*cos(angle_to_cone).real)
 
+            # this value could be tuned, not sure what velocity threshold to use
             if abs(vel) < 0.25: #prevent sticking and not moving. 
                 vel = 0.25
             
-
+            # Note: Not sure if this will ever occur for line following
             if distance_from_cone < self.parking_distance*2 : #start slowing down
                 slowdown_normalized = (distance_from_cone-self.parking_distance)/self.parking_distance
                 vel = vel*(slowdown_normalized)
@@ -114,12 +122,11 @@ class ParkingController():
             #maybe baselink and everything else is already implemented?
 
             if self.slow_down:
-                slowdown_normalized = (self.distance_from_stop_sign-self.parking_distance)/self.parking_distance
+                slowdown_normalized = (self.distance_from_stop_sign-self.dist_req)/self.parking_distance
                 vel = vel*(slowdown_normalized)
 
-                if self.distance_from_stop_sign >= self.parking_distance-0.05 and self.distance_from_stop_sign <= self.parking_distance +0.05:
+                if self.distance_from_stop_sign >= self.dist_req-0.05 and self.distance_from_stop_sign <= self.dist_req +0.05:
                     vel = 0
-                    self.timer_stopping = 0
                     self.stopped = True 
             
             drive_cmd.drive.steering_angle = delta
