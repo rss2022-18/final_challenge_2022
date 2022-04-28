@@ -76,8 +76,8 @@ class StopSignLocationTransform():
 
                 # Publish relative xy position of object in real world
                 relative_xy_msg = StopSignLocation()
-                relative_xy_msg.x_pos = y
-                relative_xy_msg.y_pos = -1*x
+                relative_xy_msg.x_pos = x
+                relative_xy_msg.y_pos = y
                 self.stop_sign_pub.publish(relative_xy_msg)
 
     def transformUvToXy(self, u, v):

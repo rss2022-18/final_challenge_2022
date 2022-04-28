@@ -51,8 +51,8 @@ class ParkingController():
         if msg is not None:
             self.relative_x = msg.x_pos
             self.relative_y = msg.y_pos
-            self.distance_from_stop_sign = sqrt(self.relative_x**2 + self.relative_y**2).real
-
+            # self.distance_from_stop_sign = sqrt(self.relative_x**2 + self.relative_y**2).real
+            self.distance_from_stop_sign = self.relative_x
 
         # The stop distance is about 0.75 - 1 meters
         elapsed_time = (self.timer_following - rospy.Time.now()).to_sec()
