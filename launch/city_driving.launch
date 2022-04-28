@@ -15,17 +15,6 @@
   <node pkg="final_challenge_2022" name="stop_sign_location_transform" type="stop_sign_location_transform.py" output="screen">
   </node>
 
-  <!-- Line following-->
-  <!--<node pkg="visual_servoing" name="parking_controller" type="parking_controller.py" output="screen">
-  	<param name="drive_topic" value="/vesc/ackermann_cmd_mux/input/nav_1" />
-  </node> -->
-
-  <node pkg="visual_servoing" name="cone_detector" type="cone_detector.py" output="screen">
-  </node>
-
-  <node pkg="visual_servoing" name="homography_transformer" type="homography_transformer.py" output="screen">
-  </node>
-
   <node pkg="image_transport" name="republish" type="republish" args="raw in:=/cone_debug_img out:=/cone_debug_img_compressed" output="screen"></node>
 
 </launch>
