@@ -24,7 +24,7 @@ class SignDetector:
         stop_msg.label = "Stop_data"
         stop_msg.size = 5
         stop_msg.stride = 1
-        stop_msg.data = [is_stop,rectangle_coord[0],rectangle_coord[1],rectangle_coord[2],rectangle_coord[3]]
+        stop_msg.data.append([is_stop,rectangle_coord[0],rectangle_coord[1],rectangle_coord[2],rectangle_coord[3]])
         self.publisher.publish(stop_msg)
 
 if __name__=="__main__":
