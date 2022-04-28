@@ -76,7 +76,8 @@ class StopSignLocationTransform():
 
                 # Publish relative xy position of object in real world
                 relative_xy_msg = StopSignLocation()
-                relative_xy_msg.x_pos = x
+                # TODO: figure out the right frame to publish locations correctly
+                relative_xy_msg.x_pos = -1*x
                 relative_xy_msg.y_pos = y
                 self.stop_sign_pub.publish(relative_xy_msg)
 
