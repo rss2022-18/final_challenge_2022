@@ -2,6 +2,8 @@
 
 import rospy
 import numpy as np
+import cv2
+
 
 from ackermann_msgs.msg import AckermannDriveStamped
 from std_msgs.msg import Float32MultiArray
