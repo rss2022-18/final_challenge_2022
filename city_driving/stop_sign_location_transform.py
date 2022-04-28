@@ -4,7 +4,8 @@ import rospy
 import numpy as np
 
 from ackermann_msgs.msg import AckermannDriveStamped
-from final_challenge_2022.msg import StopSignLocationPixel, StopSignLocation
+from std_msgs.msg import Float32MultiArray
+from final_challenge_2022.msg import StopSignLocation
 
 # The following collection of pixel locations and corresponding relative
 # ground plane locations are used to compute our homography matrix
@@ -63,6 +64,7 @@ class StopSignLocationTransform():
         # Extract information from message
         if msg is not None:
             contents = msg.data
+            # TODO: check if these pixel values respect the expected frame orientation
             u = (contents[0] + contents[2])/2
             v = (contents[1] + contents[3])/2
 
@@ -70,7 +72,7 @@ class StopSignLocationTransform():
             x, y = self.transformUvToXy(u, v)
 
             # Publish relative xy position of object in real world
-            relative_xy_msg = StopSignLocationPixel()
+            relative_xy_msg = StopSignLocation()
             relative_xy_msg.x_pos = y
             relative_xy_msg.y_pos = -1*x
             self.stop_sign_pub.publish(relative_xy_msg)
@@ -96,8 +98,8 @@ class StopSignLocationTransform():
 
 if __name__ == '__main__':
     try:
-        rospy.init_node('ParkingController', anonymous=True)
-        ParkingController()
+        rospy.init_node('stop_sign_location_transform', anonymous=True)
+        homography_transformer_stop = StopSignLocationTransform()
         rospy.spin()
     except rospy.ROSInterruptException:
         pass

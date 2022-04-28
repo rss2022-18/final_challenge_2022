@@ -11,7 +11,7 @@ from sensor_msgs.msg import Image
 from geometry_msgs.msg import Point
 from ackermann_msgs.msg import AckermannDriveStamped
 from visualization_msgs.msg import Marker
-from final_challenge_2022.msg import StopSignLocation, StopSignLocationPixel
+from visual_servoing.msg import ConeLocation, ConeLocationPixel
 
 # The following collection of pixel locations and corresponding relative
 # ground plane locations are used to compute our homography matrix
@@ -44,9 +44,9 @@ METERS_PER_INCH = 0.0254
 class HomographyTransformer:
     def __init__(self):
         self.cone_px_sub = rospy.Subscriber(
-            "/relative_cone_px", StopSignLocationPixel, self.cone_detection_callback)
+            "/relative_cone_px", ConeLocationPixel, self.cone_detection_callback)
         self.cone_pub = rospy.Publisher(
-            "/stop_sign_location", StopSignLocation, queue_size=10)
+            "/relative_cone", ConeLocation, queue_size=10)
 
         # self.marker_sub = rospy.Subscriber(
         #     '/zed/zed_node/rgb/image_rect_color_mouse_left', Point, self.pixel_callback)
@@ -89,7 +89,7 @@ class HomographyTransformer:
         x, y = self.transformUvToXy(u, v)
 
         # Publish relative xy position of object in real world
-        relative_xy_msg = StopSignLocation()
+        relative_xy_msg = ConeLocation()
         relative_xy_msg.x_pos = y
         relative_xy_msg.y_pos = -1*x
         self.cone_pub.publish(relative_xy_msg)

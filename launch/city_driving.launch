@@ -10,6 +10,10 @@
   <node pkg="final_challenge_2022" name="parking_controller" type="parking_controller.py" output="screen">
   	<param name="drive_topic" value="/vesc/ackermann_cmd_mux/input/navigation" />
   </node>
+  <!-- I wonder if we can have multiple nodes with the same name?
+        We might also need to put files into a src folder? -->
+  <node pkg="final_challenge_2022" name="stop_sign_location_transform" type="stop_sign_location_transform.py" output="screen">
+  </node>
 
   <!-- Line following-->
   <!--<node pkg="visual_servoing" name="parking_controller" type="parking_controller.py" output="screen">
