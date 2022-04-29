@@ -10,6 +10,8 @@ import datetime
 from visual_servoing.msg import ConeLocation, ParkingError
 from ackermann_msgs.msg import AckermannDriveStamped
 from final_challenge_2022.msg import StopSignLocation
+from std_msgs.msg import Float32MultiArray
+
 
 #slow height should be the pixel height of the stop sign at our desired slow down distance 
 SLOW_HEIGHT = 55
