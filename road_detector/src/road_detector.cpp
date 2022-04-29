@@ -5,8 +5,10 @@
 #include "visualization_msgs/Marker.h"
 #include "visualization_msgs/MarkerArray.h"
 #include "geometry_msgs/Point.h"
+#include "final_challenge_2022/ConeLocation.h"
 #include <algorithm>
-#include <iostream>
+#include <stdio.h>
+#include <cmath>
 const int low_threshold = 100;
 const int high_threshold = 200;
 const int kernel_size = 3;
@@ -40,13 +42,14 @@ class RoadDetector{
     cv::Vec4i left_line_;
     cv::Vec4i right_line_;
     cv::Vec4i mid_line_;
+    visualization_msgs::Marker line_list_;
     public: 
         RoadDetector(ros::NodeHandle n): nh_(n), low_threshold_(200), high_threshold_(400), kernel_size_(3){
             img_sub_ = nh_.subscribe("/zed/zed_node/rgb/image_rect_color", 1, &RoadDetector::imgCallback, this);
             img_pub_ = nh_.advertise<sensor_msgs::Image>("/road_detector/debug_img", 1);
             box_pub_ = nh_.advertise<sensor_msgs::Image>("/road_detector/box", 1);
             marker_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/road_detector/visualizations", 1);
-            point_pub_ = nh_.advertise<geometry_msgs::Point>("/road_detector/next_point", 1);
+            point_pub_ = nh_.advertise<final_challenge_2022::ConeLocation>("/road_detector/next_point", 1);
             homography_matrix_ = cv::findHomography(PTS_IMAGE_PLANE, PTS_GROUND_PLANE);
         }
 
@@ -74,9 +77,31 @@ class RoadDetector{
             cv::Mat left_img = detected_edges_(left_roi);
             cv::Mat right_img = detected_edges_(right_roi);
 
-            RoadDetector::detectLaneLine(&left_line_, &left_img, left_roi.x, left_roi.y);
-            RoadDetector::detectLaneLine(&right_line_, &right_img, right_roi.x, right_roi.y);
-
+            std::vector<cv::Vec4i> left_lines;
+            std::vector<cv::Vec4i> right_lines; 
+            cv::HoughLinesP(left_img, left_lines, 1, CV_PI/180, 50, 50, 10);
+            cv::HoughLinesP(right_img, right_lines, 1, CV_PI/180, 50, 50, 10);
+ 
+            double min_dist = 100000;
+            for(size_t i = 0; i < left_lines.size(); i++){
+                cv::Vec4i l = left_lines[i];
+                double dist = RoadDetector::getDist(l);
+                if(dist < min_dist){
+                    min_dist = dist;
+                    left_line_ = l;
+                }
+                cv::line(debug_img_, cv::Point(l[0], l[1] + left_roi.y), cv::Point(l[2], l[3] + left_roi.y), cv::Scalar(0,0,255), 3, cv::LINE_AA);
+            }
+            min_dist = 100000;
+            for(size_t i = 0; i < right_lines.size(); i++){
+                cv::Vec4i l = right_lines[i];
+                double dist = RoadDetector::getDist(l);
+                if(dist < min_dist){
+                    min_dist = dist;
+                    right_line_ = l;
+                }
+                cv::line(debug_img_, cv::Point(l[0] + right_roi.x, l[1] + right_roi.y), cv::Point(l[2] + right_roi.x, l[3] + right_roi.y), cv::Scalar(0,0,255), 3, cv::LINE_AA);
+            }
             int min_y, max_y;
             min_y = std::min(std::min(left_line_[1], left_line_[3]),std::min(right_line_[1], right_line_[3]));
             max_y = std::max(std::max(left_line_[1], left_line_[3]), std::max(right_line_[1], right_line_[3]));
@@ -85,42 +110,29 @@ class RoadDetector{
             cv::line(debug_img_, cv::Point(right_line_[0] + right_roi.x , right_line_[1] + right_roi.y), cv::Point(right_line_[2] + right_roi.x, right_line_[3] + right_roi.y), cv::Scalar(0,255,0), 3, cv::LINE_AA);
             cv::line(debug_img_, cv::Point(mid_line_[0], mid_line_[1] + left_roi.y), cv::Point(mid_line_[2], mid_line_[3] + left_roi.y), cv::Scalar(255,0,0), 3, cv::LINE_AA);
             img_pub_.publish(cv_bridge::CvImage(std_msgs::Header(), "bgr8", debug_img_).toImageMsg());
-            point_pub_.publish(RoadDetector::makePoint(mid_line_[2], mid_line_[3] + left_roi.y, 0));
+            final_challenge_2022::ConeLocation next_point;
+            double x,y;
+            RoadDetector::transformUvToXy(mid_line_[0], mid_line_[1], &x, &y);
+            next_point.x_pos = x;
+            next_point.y_pos = y;
             RoadDetector::visualizeLines();
         }
-
-    void detectLaneLine(cv::Vec4i * lane_line, cv::Mat * img, int x_offset, int y_offset){
-            double min_dist = 100000;
-            std::vector<cv::Vec4i> lines_p;
-            cv::HoughLinesP(*img, lines_p, 1, CV_PI/180, 50, 50, 10);
-            for(size_t i = 0; i < lines_p.size(); i++){
-                cv::Vec4i line = lines_p[i];
-                double m = (line[3] - line[1])/(line[2] - line[0]);
-                if(m > 1.0){
-                    double b = line[1] - line[0]*m;
-                    double dist = RoadDetector::getDist(m ,b);
-                    if(dist < min_dist){
-                        min_dist = dist;
-                        *lane_line= line;
-                    }
-                }
-                cv::line(debug_img_, cv::Point(line[0] + x_offset, line[1] + y_offset), cv::Point(line[2] + x_offset, line[3] + y_offset), cv::Scalar(0,0,255), 3, cv::LINE_AA);
-            }
-        }
-    double getDist(double m, double b){ 
-        return abs(m*detected_edges_.cols + b - detected_edges_.rows/2)/sqrt(m*m + 1);
+    double getDist(cv::Vec4i line){ 
+        double m = (line[3] - line[1])/(line[2] - line[0] +.0001);
+        double b = line[1] - line[0]*m;
+        return abs(m*detected_edges_.cols/2 + b - detected_edges_.rows/2)/sqrt(m*m + 1);
     }
     void transformUvToXy(int u, int v, double* x, double* y){
         cv::Vec3d homogeneous_point = cv::Vec3d(u, v, 1.0);
-        // std::cout << homography_matrix_.type() << std::endl;
+        std::cout << homography_matrix_.type() << std::endl;
         cv::Mat xy_point =  homography_matrix_ * cv::Mat(homogeneous_point);
         double scaling_factor = 1/xy_point.at<double>(2,0);
         cv::Mat homoogeneous_xy = xy_point * scaling_factor;
-        *x = homoogeneous_xy.at<double>(0,0);
-        *y = homoogeneous_xy.at<double>(1,0);
+        *x = homoogeneous_xy.at<double>(1,0);
+        *y = -homoogeneous_xy.at<double>(0,0);
     }
 
-    void visualizeLines(){
+void visualizeLines(){
         visualization_msgs::MarkerArray marker_array;
         visualization_msgs::Marker outer_line_list_;
         visualization_msgs::Marker mid_line_list;

@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   sensor_msgs
+  genmsg
   cv_bridge 
   visualization_msgs
   message_generation
@@ -54,6 +55,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate messages in the 'msg' folder
 add_message_files(
   FILES
+  ConeLocation.msg
   #Message1.msg
   #Message2.msg
 )
@@ -112,7 +114,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES final_challenge_2022
-CATKIN_DEPENDS geometry_msgs openncv2 roscpp rospy std_msgs # visual_msgs
+CATKIN_DEPENDS message_runtime geometry_msgs openncv2 roscpp rospy std_msgs # visual_msgs
 #  DEPENDS system_lib
 )
 
@@ -216,3 +218,4 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 add_executable(road_detector road_detector/src/road_detector.cpp)
 target_link_libraries(road_detector ${OpenCV_LIBRARIES})
 target_link_libraries(road_detector ${catkin_LIBRARIES})
+add_dependencies(road_detector final_challenge_2022_generate_messages_cpp)
