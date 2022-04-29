@@ -11,6 +11,10 @@ from visual_servoing.msg import ConeLocation, ParkingError
 from ackermann_msgs.msg import AckermannDriveStamped
 from final_challenge_2022.msg import StopSignLocation
 
+#slow height should be the pixel height of the stop sign at our desired slow down distance 
+SLOW_HEIGHT = 55
+STOP_HEIGHT = 89
+
 # NOTE: the car just has to reach zero momentum at a stop sign, there is no particular amount of time it must be stopped
 class ParkingController():
     """
@@ -21,9 +25,9 @@ class ParkingController():
     def __init__(self):
         self.cone_detector_subscriber= rospy.Subscriber("/relative_cone", ConeLocation,
             self.relative_cone_callback)
+        self.stop_sign_bbox_subscriber = rospy.Subscriber("/stop_sign_bbox", Float32MultiArray, self.stop_sign_bbox_callback)
 
-        self.stop_sign_subscriber = rospy.Subscriber("/stop_sign_location", StopSignLocation, self.stop_sign_callback)
-        
+        # self.stop_sign_subscriber = rospy.Subscriber("/stop_sign_location", StopSignLocation, self.stop_sign_callback)
 
         DRIVE_TOPIC = rospy.get_param("~drive_topic") # set in launch file; different for simulator vs racecar
         self.drive_pub = rospy.Publisher(DRIVE_TOPIC,
@@ -40,25 +44,35 @@ class ParkingController():
         self.relative_x = 0
         self.relative_y = 0
         self.slow_down = False
-        self.distance_from_stop_sign = None
+        self.perceived_height = None
         self.stopped = False
         self.dist_req = 1  # [m], we should stop about 0.75-1meter away from the sign
         self.timer_following = None
         self.timer_stopping = None
         self.stop_buffer = 3  # [s], amount of time to ignore a stop sign
 
-    def stop_sign_callback(self, msg):
+    def stop_sign_bbox_callback(self, msg):
         if msg is not None:
-            self.relative_x = msg.x_pos
-            self.relative_y = msg.y_pos
-            # self.distance_from_stop_sign = sqrt(self.relative_x**2 + self.relative_y**2).real
-            self.distance_from_stop_sign = self.relative_x
+            contents = msg.data
+            if contents:
+                height = abs(contents[3]-contents[1])
+                self.perceived_height = height
+                elapsed_time = (self.timer_following - rospy.Time.now()).to_sec()
+                if height > SLOW_HEIGHT and not self.slow_down and elapsed_time > self.stop_buffer:
+                    self.slow_down = True
 
-        # The stop distance is about 0.75 - 1 meters
-        elapsed_time = (self.timer_following - rospy.Time.now()).to_sec()
-        # adding 0.25 meters gives us about 0.25 meters to slow down, this value can be changed / tuned
-        if self.distance_from_stop_sign <= self.dist_req+0.25 and not self.slow_down and elapsed_time > self.stop_buffer:
-            self.slow_down = True
+    # def stop_sign_callback(self, msg):
+    #     if msg is not None:
+    #         self.relative_x = msg.x_pos
+    #         self.relative_y = msg.y_pos
+    #         # self.distance_from_stop_sign = sqrt(self.relative_x**2 + self.relative_y**2).real
+    #         self.distance_from_stop_sign = self.relative_x
+
+    #     # The stop distance is about 0.75 - 1 meters
+    #     elapsed_time = (self.timer_following - rospy.Time.now()).to_sec()
+    #     # adding 0.25 meters gives us about 0.25 meters to slow down, this value can be changed / tuned
+    #     if self.distance_from_stop_sign <= self.dist_req+0.25 and not self.slow_down and elapsed_time > self.stop_buffer:
+    #         self.slow_down = True
 
 
     def relative_cone_callback(self, msg):
@@ -122,10 +136,10 @@ class ParkingController():
             #maybe baselink and everything else is already implemented?
 
             if self.slow_down:
-                slowdown_normalized = (self.distance_from_stop_sign-self.dist_req)/self.parking_distance
+                slowdown_normalized = abs(self.perceived_height-STOP_HEIGHT)/self.parking_distance
                 vel = vel*(slowdown_normalized)
 
-                if self.distance_from_stop_sign >= self.dist_req-0.05 and self.distance_from_stop_sign <= self.dist_req +0.05:
+                if self.perceived_height >= STOP_HEIGHT - 0.05:
                     vel = 0
                     self.stopped = True 
             
