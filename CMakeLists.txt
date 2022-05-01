@@ -56,6 +56,8 @@ add_message_files(
   FILES
   StopSignLocation.msg
   StopSignLocationPixel.msg
+  ConeLocation.msg
+  ConeLocationPixel.msg
 )
 
 ## Generate services in the 'srv' folder
