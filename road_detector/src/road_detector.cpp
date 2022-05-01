@@ -79,47 +79,57 @@ class RoadDetector{
 
             std::vector<cv::Vec4i> left_lines;
             std::vector<cv::Vec4i> right_lines; 
-            cv::HoughLinesP(left_img, left_lines, 1, CV_PI/180, 50, 50, 10);
-            cv::HoughLinesP(right_img, right_lines, 1, CV_PI/180, 50, 50, 10);
+            cv::HoughLinesP(left_img, left_lines, 1, CV_PI/180, 50, 100, 20);
+            cv::HoughLinesP(right_img, right_lines, 1, CV_PI/180, 50, 100, 20);
  
             double min_dist = 100000;
+            // double left_m = 0;
+            // double left_b = 0;
+            // double right_m = 0;
+            // double right_b = 0;
             for(size_t i = 0; i < left_lines.size(); i++){
                 cv::Vec4i l = left_lines[i];
-                double dist = RoadDetector::getDist(l);
-                if(dist < min_dist){
+                double m = (l[3] - l[1])/(l[2] - l[0] +.0001);
+                double b = l[1] - l[0]*m;
+                double dist = RoadDetector::getDist(l,m,b);
+                if(dist < min_dist && std::abs(m) > 0.1){
                     min_dist = dist;
-                    left_line_ = l;
+                    left_line_ = generate_lane(m,b);
                 }
+                // left_m += (l[3] - l[1]) / (l[2] - l[0]);
+                // left_b += l[1] - left_m * l[0];
                 cv::line(debug_img_, cv::Point(l[0], l[1] + left_roi.y), cv::Point(l[2], l[3] + left_roi.y), cv::Scalar(0,0,255), 3, cv::LINE_AA);
             }
             min_dist = 100000;
             for(size_t i = 0; i < right_lines.size(); i++){
                 cv::Vec4i l = right_lines[i];
-                double dist = RoadDetector::getDist(l);
-                if(dist < min_dist){
+                double m = (l[3] - l[1])/(l[2] - l[0] +.0001);
+                double b = l[1] - l[0]*m;
+                double dist = RoadDetector::getDist(l,m,b);
+                if(dist < min_dist && std::abs(m) > 0.1){
                     min_dist = dist;
-                    right_line_ = l;
+                    right_line_ = generate_lane(m ,b);
                 }
+                // right_m += (l[3] - l[1]) / (l[2] - l[0]);
+                // right_b += l[1] - right_m * l[0];
                 cv::line(debug_img_, cv::Point(l[0] + right_roi.x, l[1] + right_roi.y), cv::Point(l[2] + right_roi.x, l[3] + right_roi.y), cv::Scalar(0,0,255), 3, cv::LINE_AA);
             }
             int min_y, max_y;
             min_y = std::min(std::min(left_line_[1], left_line_[3]),std::min(right_line_[1], right_line_[3]));
             max_y = std::max(std::max(left_line_[1], left_line_[3]), std::max(right_line_[1], right_line_[3]));
-            mid_line_ = cv::Vec4i((left_line_[0] + (right_line_[2] + right_roi.x))/2, min_y, ((right_line_[2] + right_roi.x) + left_line_[0])/2, max_y);
+            mid_line_ = cv::Vec4i((left_line_[0] + (right_line_[2] + right_roi.x))/2, min_y, ((right_line_[0] + right_roi.x) + left_line_[0])/2, max_y);
             cv::line(debug_img_, cv::Point(left_line_[0], left_line_[1] + left_roi.y), cv::Point(left_line_[2], left_line_[3] + left_roi.y), cv::Scalar(0,255,0), 3, cv::LINE_AA);
             cv::line(debug_img_, cv::Point(right_line_[0] + right_roi.x , right_line_[1] + right_roi.y), cv::Point(right_line_[2] + right_roi.x, right_line_[3] + right_roi.y), cv::Scalar(0,255,0), 3, cv::LINE_AA);
             cv::line(debug_img_, cv::Point(mid_line_[0], mid_line_[1] + left_roi.y), cv::Point(mid_line_[2], mid_line_[3] + left_roi.y), cv::Scalar(255,0,0), 3, cv::LINE_AA);
             img_pub_.publish(cv_bridge::CvImage(std_msgs::Header(), "bgr8", debug_img_).toImageMsg());
             final_challenge_2022::ConeLocation next_point;
             double x,y;
-            RoadDetector::transformUvToXy(mid_line_[0], mid_line_[1], &x, &y);
+            RoadDetector::transformUvToXy(mid_line_[2], mid_line_[3], &x, &y);
             next_point.x_pos = x;
             next_point.y_pos = y;
             RoadDetector::visualizeLines();
         }
-    double getDist(cv::Vec4i line){ 
-        double m = (line[3] - line[1])/(line[2] - line[0] +.0001);
-        double b = line[1] - line[0]*m;
+    double getDist(cv::Vec4i line, double m, double b){ 
         return abs(m*detected_edges_.cols/2 + b - detected_edges_.rows/2)/sqrt(m*m + 1);
     }
     void transformUvToXy(int u, int v, double* x, double* y){
@@ -131,8 +141,15 @@ class RoadDetector{
         *x = homoogeneous_xy.at<double>(1,0);
         *y = -homoogeneous_xy.at<double>(0,0);
     }
-
-void visualizeLines(){
+    cv::Vec4i generate_lane(double m, double b){
+        cv::Vec4i lane; 
+        lane[1] = detected_edges_.rows/2; 
+        lane[3] = 0;
+        lane[0] = std::max(-detected_edges_.cols/2, std::min(detected_edges_.cols/2, (int)((lane[1] - b)/m)));
+        lane[2] = std::max(-detected_edges_.cols/2, std::min(detected_edges_.cols/2, (int)((lane[3] - b)/m)));
+        return lane;
+    }
+    void visualizeLines(){
         visualization_msgs::MarkerArray marker_array;
         visualization_msgs::Marker outer_line_list_;
         visualization_msgs::Marker mid_line_list;

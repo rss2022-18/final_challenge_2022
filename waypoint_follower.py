@@ -23,7 +23,8 @@ class ParkingController():
                          self.relative_cone_callback)  # to change
 
         # set in launch file; different for simulator vs racecar
-        DRIVE_TOPIC = "/vesc/ackermann_cmd_mux/input/navigation"#rospy.get_param("~drive_topic")
+        # rospy.get_param("~drive_topic")
+        DRIVE_TOPIC = "/vesc/ackermann_cmd_mux/input/navigation"
         self.drive_pub = rospy.Publisher(DRIVE_TOPIC,
                                          AckermannDriveStamped, queue_size=10)
         self.error_pub = rospy.Publisher("/parking_error",
@@ -93,7 +94,7 @@ class ParkingController():
         drive_cmd.drive.speed = vel
 
         # maybe baselink and everything else is already implemented?
-
+        print("Sending command")
         self.drive_pub.publish(drive_cmd)
         self.error_publisher()
 

@@ -1,0 +1,5 @@
+<launch>
+<include file ="$(find racecar_simulator)/launch/simulate.launch"/>
+<node pkg="final_challenge_2022" type="road_detector" name ="road_detector" output = "screen"/>
+<node name ="bag_record" pkg="rosbag" type="play" args ="$(find final_challenge_2022)/media/noisy_race.bag"/>
+</launch>
