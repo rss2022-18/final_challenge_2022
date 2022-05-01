@@ -2,6 +2,7 @@
 
   <!-- Launch the city driving on real robot. Launches safety controller, controller node, cone detection node, and the homography transformer, line following -->
   
+  <include file="$(find zed_wrapper)/launch/zed.launch" />
   <!-- Safety controller -->
   <node pkg="safety_controller" name="safety_controller" type="safety_controller.py" output="screen">
     <param name="drive_topic" value="/vesc/low_level/ackermann_cmd_mux/input/safety" />

@@ -10,7 +10,7 @@ from cv_bridge import CvBridge, CvBridgeError
 from visualization_msgs.msg import Marker
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Point  # geometry_msgs not in CMake file
-from visual_servoing.msg import StopSignLocationPixel
+from final_challenge_2022.msg import ConeLocationPixel
 
 # import your color segmentation algorithm; call this function in ros_image_callback!
 from computer_vision.color_segmentation import cd_color_segmentation
@@ -29,9 +29,9 @@ class ConeDetector():
 
         # Subscribe to ZED camera RGB frames
         self.cone_pub = rospy.Publisher(
-            "/relative_stop_px", StopSignLocationPixel, queue_size=10)
+            "/relative_cone_px", ConeLocationPixel, queue_size=10)
         self.debug_pub = rospy.Publisher(
-            "/stop_debug_img", Image, queue_size=10)
+            "/cone_debug_img", Image, queue_size=10)
         self.image_sub = rospy.Subscriber(
             "/zed/zed_node/rgb/image_rect_color", Image, self.image_callback)
         self.bridge = CvBridge()  # Converts between ROS images and OpenCV Images
@@ -62,7 +62,7 @@ class ConeDetector():
         # the y pixel coordinate of the bottom of the bounding box
         y_bottom = bright[1]
 
-        cone_loc = StopSignLocationPixel()
+        cone_loc = ConeLocationPixel()
         cone_loc.u = x_avg
         cone_loc.v = y_bottom
         self.cone_pub.publish(cone_loc)
@@ -71,7 +71,6 @@ class ConeDetector():
 
 if __name__ == '__main__':
     try:
-        # this name might have to be changed?
         rospy.init_node('ConeDetector', anonymous=True)
         ConeDetector()
         rospy.spin()
