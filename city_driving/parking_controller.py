@@ -37,7 +37,7 @@ class ParkingController():
         self.error_pub = rospy.Publisher("/parking_error",
             ParkingError, queue_size=10)
         # 1 m/s is the absolute max speed for the city. for full credit, staff expect ~0.5 m/s to be sufficient
-        self.desired_velocity = 0.75 #[m/s]
+        self.desired_velocity = 0.25 #[m/s]
         self.L = 0.35 #[m]
         # In order to line follow, lookahead > parking_distance must be true
         # these two variables can be adjusted if needed. requires testing.
