@@ -4,9 +4,9 @@
   
   <include file="$(find zed_wrapper)/launch/zed.launch" />
   <!-- Safety controller -->
-  <node pkg="safety_controller" name="safety_controller" type="safety_controller.py" output="screen">
+  <!-- <node pkg="safety_controller" name="safety_controller" type="safety_controller.py" output="screen">
     <param name="drive_topic" value="/vesc/low_level/ackermann_cmd_mux/input/safety" />
-  </node>
+  </node> -->
 
   <!-- Line following-->
   <node pkg="final_challenge_2022" name="parking_controller" type="parking_controller.py" output="screen">
