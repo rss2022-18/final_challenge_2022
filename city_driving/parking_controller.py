@@ -37,12 +37,12 @@ class ParkingController():
         self.error_pub = rospy.Publisher("/parking_error",
             ParkingError, queue_size=10)
         # 1 m/s is the absolute max speed for the city. for full credit, staff expect ~0.5 m/s to be sufficient
-        self.desired_velocity = 1  #[m/s]
+        self.desired_velocity = 0.25 #[m/s]
         self.L = 0.35 #[m]
         # In order to line follow, lookahead > parking_distance must be true
         # these two variables can be adjusted if needed. requires testing.
-        self.lookahead = 0.90 # [m], variable
-        self.parking_distance = .75 # meters; try playing with this number!
+        self.lookahead = 0.25 # [m], variable
+        self.parking_distance = .5 # meters; try playing with this number!
         self.relative_x = 0
         self.relative_y = 0
         self.slow_down = False
@@ -138,11 +138,14 @@ class ParkingController():
             
             #maybe baselink and everything else is already implemented?
 
+            print("Perceived Height::: " + str(self.perceived_height) )
+            
+
             if self.slow_down:
                 slowdown_normalized = abs(self.perceived_height-STOP_HEIGHT)/self.parking_distance
                 vel = vel*(slowdown_normalized)
 
-                if self.perceived_height >= STOP_HEIGHT - 0.05:
+                if self.perceived_height >= abs(STOP_HEIGHT - 0.05):
                     vel = 0
                     self.stopped = True 
             
