@@ -78,6 +78,7 @@ class ParkingController():
 
 
     def relative_cone_callback(self, msg):
+        print("hi")
         if self.stopped:
             if self.timer_stopping is None:
                 self.timer_stopping = rospy.Time.now()

@@ -3,16 +3,19 @@
   <!-- Launch the city driving on real robot. Launches safety controller, controller node, cone detection node, and the homography transformer, line following -->
   
   <!-- Safety controller -->
-  <!--<node pkg="safety_controller" name="safety_controller" type="safety_controller.py" output="screen">
-  </node> -->
-   <include file="$(find zed_wrapper)/launch/zed.launch" />
-  <!-- Parking-->
+  <node pkg="safety_controller" name="safety_controller" type="safety_controller.py" output="screen">
+    <param name="drive_topic" value="/vesc/low_level/ackermann_cmd_mux/input/safety" />
+  </node>
+
+  <!-- Line following-->
   <node pkg="final_challenge_2022" name="parking_controller" type="parking_controller.py" output="screen">
   	<param name="drive_topic" value="/vesc/ackermann_cmd_mux/input/navigation" />
   </node>
-  <!-- I wonder if we can have multiple nodes with the same name?
-        We might also need to put files into a src folder? -->
-  <node pkg="final_challenge_2022" name="stop_sign_location_transform" type="stop_sign_location_transform.py" output="screen">
+
+  <node pkg="final_challenge_2022" name="cone_detector" type="cone_detector.py" output="screen">
+  </node>
+
+  <node pkg="final_challenge_2022" name="homography_transformer" type="homography_transformer.py" output="screen">
   </node>
 
   <node pkg="image_transport" name="republish" type="republish" args="raw in:=/cone_debug_img out:=/cone_debug_img_compressed" output="screen"></node>
