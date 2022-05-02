@@ -38,11 +38,11 @@ class ParkingController():
             ParkingError, queue_size=10)
         # 1 m/s is the absolute max speed for the city. for full credit, staff expect ~0.5 m/s to be sufficient
         self.desired_velocity = 0.25 #[m/s]
-        self.L = 0.35 #[m]
+        self.L = 0.32 #[m]
         # In order to line follow, lookahead > parking_distance must be true
         # these two variables can be adjusted if needed. requires testing.
-        self.lookahead = 0.25 # [m], variable
-        self.parking_distance = .5 # meters; try playing with this number!
+        self.lookahead = 0.5 # [m], variable
+        self.parking_distance = .75 # meters; try playing with this number!
         self.relative_x = 0
         self.relative_y = 0
         self.slow_down = False
@@ -78,7 +78,7 @@ class ParkingController():
 
 
     def relative_cone_callback(self, msg):
-        print("hi")
+        #print("hi")
         if self.stopped:
             if self.timer_stopping is None:
                 self.timer_stopping = rospy.Time.now()
@@ -98,6 +98,8 @@ class ParkingController():
                 self.timer_following = rospy.Time.now()
             self.relative_x = msg.x_pos
             self.relative_y = msg.y_pos
+
+            print("Relative Line Position! :: ("+ str(self.relative_x) + ", "  + str(self.relative_y) + ")")
             drive_cmd = AckermannDriveStamped()
 
             distance_from_cone = sqrt(self.relative_x**2 + self.relative_y**2).real
@@ -113,7 +115,7 @@ class ParkingController():
 
             # this value could be tuned, not sure what velocity threshold to use
             if abs(vel) < 0.25: #prevent sticking and not moving. 
-                vel = 0.25
+                vel = 0.5
             
             # Note: Not sure if this will ever occur for line following
             if distance_from_cone < self.parking_distance*2 : #start slowing down
@@ -138,7 +140,7 @@ class ParkingController():
             
             #maybe baselink and everything else is already implemented?
 
-            print("Perceived Height::: " + str(self.perceived_height) )
+            #print("Perceived Height::: " + str(self.perceived_height) )
             
 
             if self.slow_down:
