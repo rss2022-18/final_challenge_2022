@@ -6,7 +6,7 @@ from math import atan2
 from turtle import distance
 import rospy
 import numpy as np
-from std_msgs.msg import Float32
+from std_msgs.msg import Float64
 
 from visual_servoing.msg import ConeLocation, ParkingError
 from ackermann_msgs.msg import AckermannDriveStamped
@@ -20,7 +20,7 @@ class ParkingController():
     """
 
     def __init__(self):
-        rospy.Subscriber("/road_detector/angle", Float32,
+        rospy.Subscriber("/road_detector/angle", Float64,
                          self.angle_callback)  # to change
 
         # set in launch file; different for simulator vs racecar
