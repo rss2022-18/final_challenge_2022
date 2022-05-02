@@ -92,7 +92,8 @@ class RoadDetector{
                 double m = (l[3] - l[1])/(l[2] - l[0] +.0001);
                 double b = l[1] - l[0]*m;
                 double dist = RoadDetector::getDist(l,m,b);
-                if(dist < min_dist && std::abs(m) > 0.1){
+                bool cross = (l[0] < detected_edges_.cols/2) ^(l[2] < detected_edges_.cols/2);
+                if(dist < min_dist && !cross &&  std::abs(m) > 0.25){
                     min_dist = dist;
                     left_line_ = generate_lane(m,b);
                 }
@@ -106,7 +107,8 @@ class RoadDetector{
                 double m = (l[3] - l[1])/(l[2] - l[0] +.0001);
                 double b = l[1] - l[0]*m;
                 double dist = RoadDetector::getDist(l,m,b);
-                if(dist < min_dist && std::abs(m) > 0.1){
+                bool cross = (l[0] < detected_edges_.cols/2) ^ (l[2] < detected_edges_.cols/2);
+                if(dist < min_dist && !cross &&  std::abs(m) > 0.25){
                     min_dist = dist;
                     right_line_ = generate_lane(m ,b);
                 }
@@ -127,6 +129,7 @@ class RoadDetector{
             RoadDetector::transformUvToXy(mid_line_[2], mid_line_[3], &x, &y);
             next_point.x_pos = x;
             next_point.y_pos = y;
+            point_pub_.publish(next_point);
             RoadDetector::visualizeLines();
         }
     double getDist(cv::Vec4i line, double m, double b){ 

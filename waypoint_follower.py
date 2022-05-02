@@ -19,7 +19,7 @@ class ParkingController():
     """
 
     def __init__(self):
-        rospy.Subscriber("/next_point", ConeLocation,
+        rospy.Subscriber("/road_detector/next_point", ConeLocation,
                          self.relative_cone_callback)  # to change
 
         # set in launch file; different for simulator vs racecar
@@ -30,7 +30,7 @@ class ParkingController():
         self.error_pub = rospy.Publisher("/parking_error",
                                          ParkingError, queue_size=10)
 
-        self.desired_velocity = 5.0  # 1.0 #[m/s]
+        self.desired_velocity = 2.0  # 1.0 #[m/s]
         self.L = 0.35  # [m]
         self.lookahead = 0.70  # [m], variable
         self.parking_distance = .75  # meters; try playing with this number!
