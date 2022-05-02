@@ -124,19 +124,19 @@ class RoadDetector{
             cv::line(debug_img_, cv::Point(right_line_[0] + right_roi.x , right_line_[1] + right_roi.y), cv::Point(right_line_[2] + right_roi.x, right_line_[3] + right_roi.y), cv::Scalar(0,255,0), 3, cv::LINE_AA);
             cv::line(debug_img_, cv::Point(mid_line_[0], mid_line_[1]), cv::Point(mid_line_[2], mid_line_[3]), cv::Scalar(255,0,0), 3, cv::LINE_AA);
             img_pub_.publish(cv_bridge::CvImage(std_msgs::Header(), "bgr8", debug_img_).toImageMsg());
-            // final_challenge_2022::ConeLocation next_point;
-            // double x,y;
-            // RoadDetector::transformUvToXy(mid_line_[0], mid_line_[1], &x, &y);
-            // next_point.x_pos = x;
-            // next_point.y_pos = y;
-            // point_pub_.publish(next_point);
+            final_challenge_2022::ConeLocation next_point;
+            double x,y;
+            RoadDetector::transformUvToXy(mid_line_[0], mid_line_[1], &x, &y);
+            next_point.x_pos = x;
+            next_point.y_pos = y;
+            point_pub_.publish(next_point);
             // Calculate arctan using x and y offset
 
             // Max deviation of 10 degrees
-            double angle = std::min(std::atan(x_offset/(detected_edges_.rows/2)) + 3.14/2.0, 0.17453292519943295); 
-            std_msgs::Float64 angle_msg;
-            angle_msg.data = -angle;
-            angle_pub_.publish(angle_msg);
+            // double angle = std::min(std::atan(x_offset/(detected_edges_.rows/2)) + 3.14/2.0, 0.17453292519943295); 
+            // std_msgs::Float64 angle_msg;
+            // angle_msg.data = -angle;
+            // angle_pub_.publish(angle_msg);
             RoadDetector::visualizeLines();
         }
     double getDist(cv::Vec4i line, double m, double b){ 

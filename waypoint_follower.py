@@ -20,8 +20,8 @@ class ParkingController():
     """
 
     def __init__(self):
-        rospy.Subscriber("/road_detector/angle", Float64,
-                         self.angle_callback)  # to change
+        rospy.Subscriber("/road_detector/next_point", ConeLocation,
+                         self.relative_cone_callback)  # to change
 
         # set in launch file; different for simulator vs racecar
         # rospy.get_param("~drive_topic")
@@ -31,9 +31,9 @@ class ParkingController():
         self.error_pub = rospy.Publisher("/parking_error",
                                          ParkingError, queue_size=10)
 
-        self.desired_velocity = 2.0  # 1.0 #[m/s]
+        self.desired_velocity = 5.0  # 1.0 #[m/s]
         self.L = 0.35  # [m]
-        self.lookahead = 1.5  # [m], variable
+        self.lookahead = 1.0  # [m], variable
         self.parking_distance = .75  # meters; try playing with this number!
         self.relative_x = 0
         self.relative_y = 0
@@ -48,7 +48,7 @@ class ParkingController():
 
     def relative_cone_callback(self, msg):
         self.relative_x = msg.x_pos
-        self.relative_y = msg.y_pos
+        self.relative_y = msg.y_pos - .15
         drive_cmd = AckermannDriveStamped()
 
         #################################
