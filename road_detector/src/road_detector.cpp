@@ -53,7 +53,7 @@ class RoadDetector{
             box_pub_ = nh_.advertise<sensor_msgs::Image>("/road_detector/box", 1);
             marker_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/road_detector/visualizations", 1);
             point_pub_ = nh_.advertise<final_challenge_2022::ConeLocation>("/road_detector/next_point", 1);
-            angle_pub_ = nh_.advertise<std_msgs::Float32>('/road_detector/angle',1);
+            angle_pub_ = nh_.advertise<std_msgs::Float32>("/road_detector/angle",1);
             homography_matrix_ = cv::findHomography(PTS_IMAGE_PLANE, PTS_GROUND_PLANE);
         }
 
