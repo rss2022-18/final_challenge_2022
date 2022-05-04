@@ -2,6 +2,7 @@
 #include "opencv2/calib3d/calib3d.hpp" 
 #include "ros/ros.h"
 #include "sensor_msgs/Image.h"
+#include "std_msgs/Float32.h"
 #include "visualization_msgs/Marker.h"
 #include "visualization_msgs/MarkerArray.h"
 #include "geometry_msgs/Point.h"
@@ -31,6 +32,7 @@ class RoadDetector{
     ros::Publisher box_pub_;
     ros::Publisher marker_pub_; 
     ros::Publisher point_pub_;
+    ros::Publisher angle_pub_;
 
     private:
     cv::Mat img_; 
@@ -51,6 +53,7 @@ class RoadDetector{
             box_pub_ = nh_.advertise<sensor_msgs::Image>("/road_detector/box", 1);
             marker_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/road_detector/visualizations", 1);
             point_pub_ = nh_.advertise<final_challenge_2022::ConeLocation>("/road_detector/next_point", 1);
+            angle_pub_ = nh_.advertise<std_msgs::Float32>('/road_detect/correction_angle',1);
             homography_matrix_ = cv::findHomography(PTS_IMAGE_PLANE, PTS_GROUND_PLANE);
         }
 
@@ -91,7 +94,7 @@ class RoadDetector{
                 double dist = RoadDetector::getDist(l,m,b);
                 double length = std::sqrt((l[2]- l[0])*(l[2]- l[0]) + (l[3]- l[1])*(l[3]- l[1]));
                 bool cross = (l[0] < detected_edges_.cols/2) ^(l[2] < detected_edges_.cols/2);
-                if(dist < min_dist &&  std::abs(m) > 0.25 && length >100){
+                if(dist < min_dist &&  std::abs(m) > 0.25 && length >150){
                     min_dist = dist;
                     left_line_ = generate_lane(m,b);
                 }
@@ -105,7 +108,7 @@ class RoadDetector{
                 double dist = RoadDetector::getDist(l,m,b);
                 double length = std::sqrt((l[2]- l[0])*(l[2]- l[0]) + (l[3]- l[1])*(l[3]- l[1]));
                 bool cross = (l[0] < detected_edges_.cols/2) ^ (l[2] < detected_edges_.cols/2);
-                if(dist < min_dist && std::abs(m) > 0.25 && length >100){
+                if(dist < min_dist && std::abs(m) > 0.25 && length >150){
                     min_dist = dist;
                     right_line_ = generate_lane(m ,b);
                 }
@@ -120,13 +123,18 @@ class RoadDetector{
             cv::line(debug_img_, cv::Point(left_line_[0], left_line_[1] + left_roi.y), cv::Point(left_line_[2], left_line_[3] + left_roi.y), cv::Scalar(0,255,0), 3, cv::LINE_AA);
             cv::line(debug_img_, cv::Point(right_line_[0] + right_roi.x , right_line_[1] + right_roi.y), cv::Point(right_line_[2] + right_roi.x, right_line_[3] + right_roi.y), cv::Scalar(0,255,0), 3, cv::LINE_AA);
             cv::line(debug_img_, cv::Point(mid_line_[0], mid_line_[1]), cv::Point(mid_line_[2], mid_line_[3]), cv::Scalar(255,0,0), 3, cv::LINE_AA);
-            img_pub_.publish(cv_bridge::CvImage(std_msgs::Header(), "bgr8", debug_img_).toImageMsg());
-            final_challenge_2022::ConeLocation next_point;
-            double x,y;
-            RoadDetector::transformUvToXy(mid_line_[2], mid_line_[3], &x, &y);
-            next_point.x_pos = x;
-            next_point.y_pos = y;
-            point_pub_.publish(next_point);
+            // img_pub_.publish(cv_bridge::CvImage(std_msgs::Header(), "bgr8", debug_img_).toImageMsg());
+            // final_challenge_2022::ConeLocation next_point;
+            // double x,y;
+            // RoadDetector::transformUvToXy(mid_line_[0], mid_line_[1], &x, &y);
+            // next_point.x_pos = x;
+            // next_point.y_pos = y;
+            // point_pub_.publish(next_point);
+            // Calculate arctan using x and y offset
+
+            // Max deviation of 10 degrees
+            double angle = std::max(std::atan(x_offset/(detected_edges_.rows/2)) + 3.14/2.0, 0.17453292519943295); 
+            angle_pub_.publish((float)(angle));
             RoadDetector::visualizeLines();
         }
     double getDist(cv::Vec4i line, double m, double b){ 

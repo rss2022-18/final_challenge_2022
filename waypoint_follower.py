@@ -6,6 +6,7 @@ from math import atan2
 from turtle import distance
 import rospy
 import numpy as np
+from std_msgs.msg import Float32
 
 from visual_servoing.msg import ConeLocation, ParkingError
 from ackermann_msgs.msg import AckermannDriveStamped
@@ -19,8 +20,8 @@ class ParkingController():
     """
 
     def __init__(self):
-        rospy.Subscriber("/road_detector/next_point", ConeLocation,
-                         self.relative_cone_callback)  # to change
+        rospy.Subscriber("/road_detector/correction_angle", Float32,
+                         self.angle_callback)  # to change
 
         # set in launch file; different for simulator vs racecar
         # rospy.get_param("~drive_topic")
@@ -36,6 +37,14 @@ class ParkingController():
         self.parking_distance = .75  # meters; try playing with this number!
         self.relative_x = 0
         self.relative_y = 0
+
+    def angle_callback(self, msg):
+        drive_cmd = AckermannDriveStamped()
+        drive_cmd.drive.steering_angle = msg.data
+        drive_cmd.drive.speed = self.desired_velocity
+        # maybe baselink and everything else is already implemented?
+        print("Sending command")
+        self.drive_pub.publish(drive_cmd)
 
     def relative_cone_callback(self, msg):
         self.relative_x = msg.x_pos
