@@ -32,7 +32,7 @@ class ParkingController():
 
         self.desired_velocity = 2.0  # 1.0 #[m/s]
         self.L = 0.35  # [m]
-        self.lookahead = 0.70  # [m], variable
+        self.lookahead = 1.5  # [m], variable
         self.parking_distance = .75  # meters; try playing with this number!
         self.relative_x = 0
         self.relative_y = 0
