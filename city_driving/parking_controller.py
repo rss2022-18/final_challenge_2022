@@ -41,8 +41,8 @@ class ParkingController():
         self.L = 0.32 #[m]
         # In order to line follow, lookahead > parking_distance must be true
         # these two variables can be adjusted if needed. requires testing.
-        self.lookahead = 0.5 # [m], variable
-        self.parking_distance = .75 # meters; try playing with this number!
+        self.lookahead = 0.45 # [m], variable
+        self.parking_distance = .05 # meters; try playing with this number!
         self.relative_x = 0
         self.relative_y = 0
         self.slow_down = False
@@ -108,7 +108,7 @@ class ParkingController():
             denominator = self.lookahead.real
 
             # pure pursuit nominal case
-            delta = (atan2(numerator, denominator)).real # wow, this one worked really well. 
+            delta = (atan2(numerator, denominator)).real 
             
             # velocity scaling, according to angle. 
             vel = abs(self.desired_velocity*cos(angle_to_cone).real)
@@ -120,21 +120,21 @@ class ParkingController():
             # Note: Not sure if this will ever occur for line following
             if distance_from_cone < self.parking_distance*2 : #start slowing down
                 slowdown_normalized = (distance_from_cone-self.parking_distance)/self.parking_distance
-                vel = vel*(slowdown_normalized)
+                vel = vel#*(slowdown_normalized)
 
                 if distance_from_cone >= self.parking_distance-0.05 and distance_from_cone <= self.parking_distance +0.05:
-                    vel = 0
+                    vel = vel#0
                 elif distance_from_cone < self.parking_distance:
                     vel = -vel
 
             # want to face the cone, not just back into it. 
-            if abs(angle_to_cone) > np.pi*0.5:
+            if abs(angle_to_cone) > np.pi*0.25:
                 #just turn in place
-                if angle_to_cone > np.pi*0.5:
+                if angle_to_cone > np.pi*0.25:
                     delta = np.pi*0.25
                     #print('spinning right')
 
-                elif angle_to_cone < -np.pi*0.5:
+                elif angle_to_cone < -np.pi*0.25:
                     delta = -np.pi*0.25
                     #print('spinning left ')
             
