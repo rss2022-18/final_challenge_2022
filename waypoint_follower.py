@@ -20,7 +20,7 @@ class ParkingController():
     """
 
     def __init__(self):
-        rospy.Subscriber("/road_detector/correction_angle", Float32,
+        rospy.Subscriber("/road_detector/angle", Float32,
                          self.angle_callback)  # to change
 
         # set in launch file; different for simulator vs racecar
